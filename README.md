@@ -1,27 +1,29 @@
-This is the evolving Java implementation of the analysis microservice of Immunizer: The Collaborative Cloud-based Unsupervised Software Immunity Framework.
+# Analysis Microservice of Immunizer
 
-**Parent**
+This is the Java implementation of the analysis microservice of Immunizer: The Collaborative Cloud-based Unsupervised Software Immunity Framework.
+
+## Parent
 - https://github.com/oiraqi/immunizer
 
-**Siblings**
+## Siblings
 - https://github.com/oiraqi/immunizer-instrumentation
 - https://github.com/oiraqi/immunizer-acquisition
 - https://github.com/oiraqi/immunizer-collaboration
 
-**Dependencies**
+## Dependencies
 
 All dependencies are managed through Gradle.
 
-**Structure**
+## Structure
 - framework: source code and dependencies managed by Gradle
 
-**Current Environment**
+## Current Environment
 - Linux Ubuntu 18.04 (Bionic)
 - OpenJDK 8
 - Gson 2.8.6
 - Apache Kafka Clients API 2.4.0
 
-**How To**
+## How To
 - Clone this repository
 - cd framework
 - ./gradlew libs
