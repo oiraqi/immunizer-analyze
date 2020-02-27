@@ -3,11 +3,16 @@
 This is the Java implementation of the analysis microservice of [Immunizer: The Collaborative Cloud-based Unsupervised Software Immunity Framework](https://github.com/oiraqi/immunizer). It leverages distributed and parallel processing thanks to cluster-computing frameworks, such as Apache Spark and Google DataFlow, abstracted and unified through Apache Beam.
 
 ## Siblings
-- [Monitoring Microagent](https://github.com/oiraqi/immunizer-monitoring)
-- [Acquisition Microservice](https://github.com/oiraqi/immunizer-acquisition)
-- [Collaboration Microservice](https://github.com/oiraqi/immunizer-collaboration)
+### Autonomic Protection Microagents
+- [Sensor Microagent](https://github.com/oiraqi/immunizer-sensor)
+- [Effector Microagent](https://github.com/oiraqi/immunizer-effector)
+### Autonomic Protection Microservices
+- [Monitoring Microservice](https://github.com/oiraqi/immunizer-monitor)
+- [Analysis Microservice](https://github.com/oiraqi/immunizer-analyze)
+- [Planning Microservice](https://github.com/oiraqi/immunizer-plan)
+- [Execution Microservice](https://github.com/oiraqi/immunizer-execute)
+- [Collaboration Microservice](https://github.com/oiraqi/immunizer-collaborate)
 - [Dashboard Microservice](https://github.com/oiraqi/immunizer-dashboard)
-- [Response Microagent](https://github.com/oiraqi/immunizer-response)
 
 ## Dependencies
 
