@@ -1,4 +1,4 @@
-package org.immunizer.microservices.analysis;
+package org.immunizer.microservices.analyzer;
 
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.ConsumerRecords;

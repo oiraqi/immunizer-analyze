@@ -1,4 +1,4 @@
-package org.immunizer.microservices.analysis;
+package org.immunizer.microservices.analyzer;
 
 import org.apache.kafka.common.serialization.Deserializer;
 import com.google.gson.Gson;

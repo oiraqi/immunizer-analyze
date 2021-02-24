@@ -1,4 +1,4 @@
-package org.immunizer.microservices.analysis;
+package org.immunizer.microservices.analyzer;
 
 import java.util.HashMap;
 import java.util.Iterator;
