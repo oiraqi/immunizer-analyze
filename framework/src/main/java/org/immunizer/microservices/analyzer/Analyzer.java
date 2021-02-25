@@ -5,16 +5,16 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 
 import java.time.Duration;
 
-public class AnalysisApplication {
+public class Analyzer {
 
     public static void main(String[] args) {
         
         FeatureRecordConsumer consumer = new FeatureRecordConsumer();
 
-        try {            
+        try {
             while (true) {
-                ConsumerRecords<String, FeatureRecord> records = consumer.poll(Duration.ofSeconds(5));
-                for (ConsumerRecord<String, FeatureRecord> record : records){
+                ConsumerRecords<String, FeatureRecord> records = consumer.poll(Duration.ofSeconds(60));
+                for (ConsumerRecord<String, FeatureRecord> record : records) {
                     System.out.printf("offset = %d, key = %s, value = %s%n",
                         record.offset(), record.key(), record.value());
                 }

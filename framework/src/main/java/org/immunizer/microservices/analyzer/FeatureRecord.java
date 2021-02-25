@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 public class FeatureRecord {
-    private int callStackId;
+    private String callStackId;
     // private StackTraceElement[] callStack;
     private String threadTag;
     private long startTime;
@@ -18,7 +18,7 @@ public class FeatureRecord {
     protected FeatureRecord() {
     }
 
-    public FeatureRecord(int callStackId, /*StackTraceElement[] callStack, */String threadTag, long startTime, long endTime,
+    public FeatureRecord(String callStackId, /*StackTraceElement[] callStack, */String threadTag, long startTime, long endTime,
             String fullyQualifiedMethodName, String version, HashMap<String, Double> record, String parameters,
             String result) {
         this.callStackId = callStackId;
@@ -33,7 +33,7 @@ public class FeatureRecord {
         this.result = result;
     }
 
-    public int getCallStackId() {
+    public String getCallStackId() {
         return callStackId;
     }
 
