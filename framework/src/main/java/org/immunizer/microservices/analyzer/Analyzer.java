@@ -44,6 +44,7 @@ public class Analyzer {
             cache.save(featureRecordRDD);
         });
 
+        // Let the game begin!
         jsc.start();
         jsc.awaitTermination();
     }
