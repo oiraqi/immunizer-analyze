@@ -6,30 +6,31 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 
+import java.util.List;
+
 import scala.Tuple2;
 
 public class DistributedCache {
 
-    private JavaIgniteContext<String, FeatureRecord> igniteContext;    
-    private JavaIgniteRDD<String, FeatureRecord> featureRecordRDD;
+    private JavaIgniteContext<Long, FeatureRecord> igniteContext;
     private final int MIN_THRESHOLD = 100;
     private final int MAX_THRESHOLD = 100000;
+    private JavaSparkContext sc;
 
-    public DistributedCache(JavaSparkContext sc) {        
-        igniteContext = new JavaIgniteContext<String, FeatureRecord>(sc, "immunizer/ignite-cfg.xml");
-        featureRecordRDD = igniteContext.fromCache("featureRecords");
+    public DistributedCache(JavaSparkContext sc) { 
+        igniteContext = new JavaIgniteContext<Long, FeatureRecord>(sc, "immunizer/ignite-cfg.xml");
+        this.sc = sc;
     }
 
-    public void save(JavaPairRDD<String, IdentifiableFeatureRecord> frRDD) {
-        JavaPairRDD<String, FeatureRecord> recordsToBeSaved = 
-            frRDD.mapToPair(record -> 
-                new Tuple2<String, FeatureRecord>(
-                    record._1() + '_' + record._2().getId(), record._2().getFeatureRecord()));
-        featureRecordRDD.savePairs(recordsToBeSaved);
+    public void save(String context, List<Tuple2<Long, FeatureRecord>> recordsToBeSaved) {
+        JavaPairRDD<Long, FeatureRecord> recordsToBeSavedRDD =
+                    sc.parallelizePairs(recordsToBeSaved);
+        
+        JavaIgniteRDD<Long, FeatureRecord> featureRecordRDD = igniteContext.fromCache("FRC/" + context);
+        featureRecordRDD.savePairs(recordsToBeSavedRDD);
     }
 
-    public JavaPairRDD<String, FeatureRecord> fetch(String context, int count) {
-        //return featureRecordRDD.sql("select * from featureRecords where _key like ?1% order by _key desc limit(?)", context, count);
-        return featureRecordRDD.filter(rec -> rec._1.startsWith(context)).sortByKey(false);
+    public JavaPairRDD<Long, FeatureRecord> fetch(String context) {
+        return igniteContext.fromCache("FRC/" + context);
     }
 }

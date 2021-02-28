@@ -14,6 +14,7 @@ import java.time.Duration;
 import java.util.regex.Pattern;
 import java.util.Vector;
 import java.util.List;
+import java.util.Iterator;
 
 import scala.Tuple2;
 
@@ -23,8 +24,9 @@ public class FeatureRecordConsumer {
     private static final String BOOTSTRAP_SERVERS = "localhost:9092";
     private static final String GROUP_ID = "Analyzer";
     private static final String TOPIC_PATTERN = "FRC/.+";
+    private DistributedCache cache;
 
-    public FeatureRecordConsumer () {
+    public FeatureRecordConsumer (DistributedCache cache) {
         Properties props = new Properties();
         props.setProperty("bootstrap.servers", BOOTSTRAP_SERVERS);
         props.setProperty("group.id", GROUP_ID);
@@ -34,26 +36,33 @@ public class FeatureRecordConsumer {
 
         consumer = new KafkaConsumer<String, FeatureRecord>(props);
         consumer.subscribe(Pattern.compile(TOPIC_PATTERN));
+        this.cache = cache;
     }
 
-    public List<Tuple2<String, IdentifiableFeatureRecord>> poll (int timeout, int minBatchSize) {
+    public Iterator<String> poll (int timeout, int minBatchSize) {
         ConsumerRecords<String, FeatureRecord> records = consumer.poll(Duration.ofSeconds(timeout));
-        Vector<Tuple2<String, IdentifiableFeatureRecord>> featureRecords = 
-            new Vector<Tuple2<String, IdentifiableFeatureRecord>>();
+        Vector<String> contexts = new Vector<String>();
+
         for (TopicPartition partition : records.partitions()) {
             List<ConsumerRecord<String, FeatureRecord>> partitionRecords = records.records(partition);
             if(partitionRecords.size() < minBatchSize)
-                continue;            
+                continue;
+                
+            Vector<Tuple2<Long, FeatureRecord>> featureRecords = 
+                new Vector<Tuple2<Long, FeatureRecord>>();
             
             for (ConsumerRecord<String, FeatureRecord> record : partitionRecords) {
-                featureRecords.add(new Tuple2<String, IdentifiableFeatureRecord>(
-                    record.value().getSwid() + '/' + record.value().getCallStackId(),
-                    new IdentifiableFeatureRecord(record.offset(), record.value())));
+                featureRecords.add(new Tuple2<Long, FeatureRecord>(                    
+                    record.offset(), record.value()));
             }
+            String context = partitionRecords.get(0).value().getSwid() + '/' + partitionRecords.get(0).value().getCallStackId();
+
+            cache.save(context, featureRecords);
+            contexts.add(context);
             long lastOffset = partitionRecords.get(partitionRecords.size() - 1).offset();
             consumer.commitSync(Collections.singletonMap(partition, new OffsetAndMetadata(lastOffset + 1)));
         }
-        return featureRecords;
+        return contexts.iterator();
     }
 
     public void close () {

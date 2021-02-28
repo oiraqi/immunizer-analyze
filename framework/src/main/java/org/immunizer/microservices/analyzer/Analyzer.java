@@ -36,22 +36,17 @@ public class Analyzer {
         SparkSession sparkSession = SparkSession.builder().appName(APP_NAME).master(SPARK_MASTER_URL).getOrCreate();
         JavaSparkContext sc = new JavaSparkContext(sparkSession.sparkContext());
         DistributedCache cache = new DistributedCache(sc);
-        FeatureRecordConsumer consumer = new FeatureRecordConsumer();
+        FeatureRecordConsumer consumer = new FeatureRecordConsumer(cache);
 
         try {
             while(true) {
-                List<Tuple2<String, IdentifiableFeatureRecord>> featureRecords =
+                Iterator<String> contexts =
                     consumer.poll(BATCH_DURATION, MIN_BATCH_SIZE);
-                JavaPairRDD<String, IdentifiableFeatureRecord> featureRecordRDD =
-                    sc.parallelizePairs(featureRecords);
-                cache.save(featureRecordRDD);
-
-                Iterator<String> contexts = featureRecordRDD.keys().distinct().collect().iterator();
 
                 while(contexts.hasNext()) {
                     String context = contexts.next();
-                    JavaPairRDD<String, FeatureRecord> fetchedRecordsRDD = 
-                        cache.fetch(context, MAX_BATCH_SIZE);
+                    JavaPairRDD<Long, FeatureRecord> fetchedRecordsRDD = 
+                        cache.fetch(context);
                     
                     StructType structType = new StructType();
                     Iterator<String> iterator = fetchedRecordsRDD.first()._2.getRecord().keySet().iterator();
