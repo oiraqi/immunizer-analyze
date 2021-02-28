@@ -7,7 +7,7 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.types.StructType;
-import org.apache.spark.sql.types.StringType;
+import org.apache.spark.sql.types.DoubleType;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.JavaRDD;
@@ -29,6 +29,7 @@ public class Analyzer {
     private static final int BATCH_DURATION = 60;
     private static final int MIN_BATCH_SIZE = 100;
     private static final int MAX_BATCH_SIZE = 100000;
+    private static final int MIN_POINTS = 1000;
 
     public static void main(String[] args) throws Exception {
         SparkSession sparkSession = SparkSession.builder().appName(APP_NAME).master(SPARK_MASTER_URL).getOrCreate();
@@ -54,7 +55,7 @@ public class Analyzer {
                     StructType structType = new StructType();
                     Iterator<String> iterator = fetchedRecordsRDD.first()._2.getRecord().keySet().iterator();
                     while(iterator.hasNext()) {
-                        structType.add(iterator.next(), new StringType());
+                        structType.add(iterator.next(), new DoubleType());
                     }
                     
                     JavaRDD<Row> rowRDD = fetchedRecordsRDD.map(record -> {
@@ -67,7 +68,8 @@ public class Analyzer {
                         return RowFactory.create(vals);
                     });
 
-                    Dataset<Row> df = sparkSession.createDataFrame(rowRDD, structType);
+                    Dataset<Row> dataFrame = sparkSession.createDataFrame(rowRDD, structType);
+                    LocalOutlierFactor localOutlierFactor = new LocalOutlierFactor(dataFrame, MIN_POINTS);
                 }
             }
         } finally {
