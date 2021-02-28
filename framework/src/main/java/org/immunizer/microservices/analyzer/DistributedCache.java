@@ -5,9 +5,6 @@ import org.apache.ignite.spark.JavaIgniteRDD;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.util.StatCounter;
-
-import java.util.Vector;
 
 import scala.Tuple2;
 
@@ -31,7 +28,8 @@ public class DistributedCache {
         featureRecordRDD.savePairs(recordsToBeSaved);
     }
 
-    public JavaIgniteRDD<String, FeatureRecord> fetch(String context, long count) {
-        return null;
+    public JavaPairRDD<String, FeatureRecord> fetch(String context, int count) {
+        //return featureRecordRDD.sql("select * from featureRecords where _key like ?1% order by _key desc limit(?)", context, count);
+        return featureRecordRDD.filter(rec -> rec._1.startsWith(context)).sortByKey(false);
     }
 }
