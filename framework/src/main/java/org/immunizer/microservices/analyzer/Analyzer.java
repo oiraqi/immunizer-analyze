@@ -30,6 +30,7 @@ public class Analyzer {
     private static final int MIN_BATCH_SIZE = 100;
     private static final int MAX_BATCH_SIZE = 100000;
     private static final int MIN_POINTS = 1000;
+    private static final int TOP_OUTLIERS = 10;
 
     public static void main(String[] args) throws Exception {
         SparkSession sparkSession = SparkSession.builder().appName(APP_NAME).master(SPARK_MASTER_URL).getOrCreate();
@@ -69,7 +70,7 @@ public class Analyzer {
                     });
 
                     Dataset<Row> dataFrame = sparkSession.createDataFrame(rowRDD, structType);
-                    LocalOutlierFactor localOutlierFactor = new LocalOutlierFactor(dataFrame, MIN_POINTS);
+                    List<Row> results = new LocalOutlierFactor(dataFrame).process(MIN_POINTS, TOP_OUTLIERS);
                 }
             }
         } finally {
