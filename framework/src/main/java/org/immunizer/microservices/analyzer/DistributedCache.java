@@ -14,8 +14,6 @@ import scala.Tuple2;
 public class DistributedCache {
 
     private JavaIgniteContext<Long, FeatureRecord> igniteContext;
-    private final int MIN_THRESHOLD = 100;
-    private final int MAX_THRESHOLD = 100000;
     private JavaSparkContext sc;
 
     public DistributedCache(JavaSparkContext sc) { 
