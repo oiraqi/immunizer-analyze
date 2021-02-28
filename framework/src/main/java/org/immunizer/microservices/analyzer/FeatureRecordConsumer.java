@@ -39,7 +39,7 @@ public class FeatureRecordConsumer {
         this.cache = cache;
     }
 
-    public Iterator<String> poll (int timeout, int minBatchSize) {
+    public Iterator<String> poll (int timeout, int minBatchSize, int maxBatchSize) {
         ConsumerRecords<String, FeatureRecord> records = consumer.poll(Duration.ofSeconds(timeout));
         Vector<String> contexts = new Vector<String>();
 
@@ -58,9 +58,14 @@ public class FeatureRecordConsumer {
             String context = partitionRecords.get(0).value().getSwid() + '/' + partitionRecords.get(0).value().getCallStackId();
 
             cache.save(context, featureRecords);
-            contexts.add(context);
+            
             long lastOffset = partitionRecords.get(partitionRecords.size() - 1).offset();
             consumer.commitSync(Collections.singletonMap(partition, new OffsetAndMetadata(lastOffset + 1)));
+
+            if (lastOffset >= maxBatchSize) {
+                contexts.add(context);
+                cache.delete(context, lastOffset - maxBatchSize);
+            }                
         }
         return contexts.iterator();
     }

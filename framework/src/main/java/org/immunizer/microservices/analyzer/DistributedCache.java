@@ -7,6 +7,7 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 
 import java.util.List;
+import java.util.Vector;
 
 import scala.Tuple2;
 
@@ -32,5 +33,9 @@ public class DistributedCache {
 
     public JavaPairRDD<Long, FeatureRecord> fetch(String context) {
         return igniteContext.fromCache("FRC/" + context);
+    }
+
+    public void delete(String context, Long minKey) {
+        igniteContext.fromCache("FRC/" + context).sql("delete from FRC/? where _key < ?", context, minKey);
     }
 }

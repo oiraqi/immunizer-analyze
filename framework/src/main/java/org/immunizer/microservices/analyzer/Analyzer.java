@@ -41,7 +41,7 @@ public class Analyzer {
         try {
             while(true) {
                 Iterator<String> contexts =
-                    consumer.poll(BATCH_DURATION, MIN_BATCH_SIZE);
+                    consumer.poll(BATCH_DURATION, MIN_BATCH_SIZE, MAX_BATCH_SIZE);
 
                 while(contexts.hasNext()) {
                     String context = contexts.next();
