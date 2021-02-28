@@ -37,6 +37,7 @@ public class Analyzer {
         JavaSparkContext sc = new JavaSparkContext(sparkSession.sparkContext());
         DistributedCache cache = new DistributedCache(sc);
         FeatureRecordConsumer consumer = new FeatureRecordConsumer(cache);
+        OutlierProducer producer = new OutlierProducer();
 
         try {
             while(true) {
@@ -66,6 +67,7 @@ public class Analyzer {
 
                     Dataset<Row> df = sparkSession.createDataFrame(rowRDD, structType);
                     List<Row> results = new LocalOutlierFactor(df, MIN_POINTS, TOP_OUTLIERS).process();
+                    producer.send(null, "");
                 }
             }
         } finally {
