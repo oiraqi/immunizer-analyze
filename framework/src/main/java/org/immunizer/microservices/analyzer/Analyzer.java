@@ -69,8 +69,8 @@ public class Analyzer {
                         return RowFactory.create(vals);
                     });
 
-                    Dataset<Row> dataFrame = sparkSession.createDataFrame(rowRDD, structType);
-                    List<Row> results = new LocalOutlierFactor(dataFrame).process(MIN_POINTS, TOP_OUTLIERS);
+                    Dataset<Row> df = sparkSession.createDataFrame(rowRDD, structType);
+                    List<Row> results = new LocalOutlierFactor(df, MIN_POINTS, TOP_OUTLIERS).process();
                 }
             }
         } finally {
