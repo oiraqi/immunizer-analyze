@@ -56,13 +56,7 @@ public class Analyzer {
                     }
                     
                     JavaRDD<Row> rowRDD = fetchedRecordsRDD.map(record -> {
-                        HashMap<String, Double> map = record._2.getRecord();
-                        Iterator<Double> it = map.values().iterator();                        
-                        Vector<Double> vals = new Vector<Double>();
-                        while(it.hasNext()) {
-                            vals.add(it.next());
-                        }                        
-                        return RowFactory.create(vals);
+                        return RowFactory.create(record._2.getRecord().values());
                     });
 
                     Dataset<Row> df = sparkSession.createDataFrame(rowRDD, structType);
