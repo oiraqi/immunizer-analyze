@@ -37,6 +37,9 @@ public class Analyzer {
         FeatureRecordConsumer consumer = new FeatureRecordConsumer(sc, cache);
         OutlierProducer producer = new OutlierProducer();
         LocalOutlierFactor localOutlierFactor = new LocalOutlierFactor();
+        StructType structType = new StructType();                    
+        structType.add("id", DataTypes.LongType);
+        structType.add("features", new VectorUDT());
 
         try {
             while(true) {
@@ -45,12 +48,7 @@ public class Analyzer {
 
                 while(contexts.hasNext()) {
                     String context = contexts.next();
-                    JavaPairRDD<Long, FeatureRecord> fetchedRecordsRDD = cache.fetch(context);
-                    
-                    StructType structType = new StructType();                    
-                    structType.add("id", DataTypes.LongType);
-                    structType.add("features", new VectorUDT());
-                    
+                    JavaPairRDD<Long, FeatureRecord> fetchedRecordsRDD = cache.fetch(context);                    
                     JavaRDD<Row> rowRDD = fetchedRecordsRDD.map(record -> {
                         return RowFactory.create(record._1, record._2.getRecord().values());
                     });
