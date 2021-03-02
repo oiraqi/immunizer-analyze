@@ -25,7 +25,7 @@ public class OutlierProducer implements Serializable {
         producer = new KafkaProducer<String, FeatureRecord>(props);
     }
 
-    public void send(FeatureRecord featureRecord, String swid) {
-        producer.send(new ProducerRecord<String, FeatureRecord>(BASE_TOPIC + '/' + swid, featureRecord.getCallStackId(), featureRecord));
+    public void send(FeatureRecord featureRecord) {
+        producer.send(new ProducerRecord<String, FeatureRecord>(BASE_TOPIC + '/' + featureRecord.getSwid(), featureRecord.getCallStackId(), featureRecord));
     }
 }

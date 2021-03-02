@@ -21,10 +21,7 @@ public class DistributedCache {
         this.sc = sc;
     }
 
-    public void save(String context, List<Tuple2<Long, FeatureRecord>> recordsToBeSaved) {
-        JavaPairRDD<Long, FeatureRecord> recordsToBeSavedRDD =
-                    sc.parallelizePairs(recordsToBeSaved);
-        
+    public void save(String context, JavaPairRDD<Long, FeatureRecord> recordsToBeSavedRDD) {        
         JavaIgniteRDD<Long, FeatureRecord> featureRecordRDD = igniteContext.fromCache("FRC/" + context);
         featureRecordRDD.savePairs(recordsToBeSavedRDD);
     }
@@ -33,7 +30,11 @@ public class DistributedCache {
         return igniteContext.fromCache("FRC/" + context);
     }
 
-    public void delete(String context, Long minKey) {
+    public void purge(String context, long minKey) {
         igniteContext.fromCache("FRC/" + context).sql("delete from FRC/? where _key < ?", context, minKey);
+    }
+
+    public void delete(String context, long[] keys) {
+        igniteContext.fromCache("FRC/" + context).sql("delete from FRC/? where _key in ?", context, keys);
     }
 }

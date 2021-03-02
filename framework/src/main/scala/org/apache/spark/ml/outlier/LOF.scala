@@ -47,12 +47,12 @@ class LOF(
   }
 
   override def transform(dataset: Dataset[_]): DataFrame = {
-    val input = dataset.select(col($(featuresCol))).rdd.map {
-      case Row(vec: Vector) => vec
-    }
     val session = dataset.sparkSession
     val sc = session.sparkContext
-    val indexedPointsRDD = input.zipWithIndex().map(_.swap).persist()
+
+    val indexedPointsRDD = dataset.rdd.map {
+      case (id: Long, Row(vec: Vector)) => (id, vec)
+    }.persist()
     val numPartitionsOfIndexedPointsRDD = indexedPointsRDD.getNumPartitions
 
     // compute k-distance neighborhood of each point
@@ -109,8 +109,7 @@ class LOF(
       (idx, sum / lrd / (iter.size - 1))
     }
 
-    val finalRDD = localOutlierFactorRDD.join(indexedPointsRDD)
-      .map(r => Row(r._1, r._2._1, r._2._2))
+    val finalRDD = localOutlierFactorRDD.map(r => Row(r._1, r._2))
     val schema = transformSchema(dataset.schema)
     session.createDataFrame(finalRDD, schema)
   }
@@ -126,10 +125,10 @@ class LOF(
         false),
       StructField(LOF.lof,
         DataTypes.DoubleType,
-        false),
+        false)/*,
       StructField(LOF.vector,
         new VectorUDT(),
-        false)
+        false)*/
       )
     )
   }

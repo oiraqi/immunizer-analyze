@@ -6,19 +6,17 @@ import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.types.DoubleType;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaPairRDD;
+import org.apache.spark.ml.linalg.VectorUDT;
 
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Vector;
 import java.util.List;
 import java.util.Iterator;
-import java.util.regex.Pattern;
 
 import scala.Tuple2;
 
@@ -36,8 +34,9 @@ public class Analyzer {
         SparkSession sparkSession = SparkSession.builder().appName(APP_NAME).master(SPARK_MASTER_URL).getOrCreate();
         JavaSparkContext sc = new JavaSparkContext(sparkSession.sparkContext());
         DistributedCache cache = new DistributedCache(sc);
-        FeatureRecordConsumer consumer = new FeatureRecordConsumer(cache);
+        FeatureRecordConsumer consumer = new FeatureRecordConsumer(sc, cache);
         OutlierProducer producer = new OutlierProducer();
+        LocalOutlierFactor localOutlierFactor = new LocalOutlierFactor();
 
         try {
             while(true) {
@@ -46,22 +45,23 @@ public class Analyzer {
 
                 while(contexts.hasNext()) {
                     String context = contexts.next();
-                    JavaPairRDD<Long, FeatureRecord> fetchedRecordsRDD = 
-                        cache.fetch(context);
+                    JavaPairRDD<Long, FeatureRecord> fetchedRecordsRDD = cache.fetch(context);
                     
-                    StructType structType = new StructType();
-                    Iterator<String> iterator = fetchedRecordsRDD.first()._2.getRecord().keySet().iterator();
-                    while(iterator.hasNext()) {
-                        structType.add(iterator.next(), new DoubleType());
-                    }
+                    StructType structType = new StructType();                    
+                    structType.add("id", DataTypes.LongType);
+                    structType.add("features", new VectorUDT());
                     
                     JavaRDD<Row> rowRDD = fetchedRecordsRDD.map(record -> {
-                        return RowFactory.create(record._2.getRecord().values());
+                        return RowFactory.create(record._1, record._2.getRecord().values());
                     });
 
                     Dataset<Row> df = sparkSession.createDataFrame(rowRDD, structType);
-                    List<Row> results = new LocalOutlierFactor(df, MIN_POINTS, TOP_OUTLIERS).process();
-                    producer.send(null, "");
+                    List<Row> outliers = localOutlierFactor.process(df, MIN_POINTS, TOP_OUTLIERS);
+                    outliers.forEach(outlier -> {
+                        FeatureRecord fr = fetchedRecordsRDD.filter(rec -> 
+                            rec._1 == outlier.get(0)).map(rec -> rec._2).first();
+                        producer.send(fr);
+                    });
                 }
             }
         } finally {

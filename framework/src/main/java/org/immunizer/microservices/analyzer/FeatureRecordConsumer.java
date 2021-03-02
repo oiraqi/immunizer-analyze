@@ -7,6 +7,9 @@ import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 
+import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.api.java.JavaPairRDD;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Properties;
@@ -25,8 +28,9 @@ public class FeatureRecordConsumer {
     private static final String GROUP_ID = "Analyzer";
     private static final String TOPIC_PATTERN = "FRC/.+";
     private DistributedCache cache;
+    private JavaSparkContext sc;
 
-    public FeatureRecordConsumer (DistributedCache cache) {
+    public FeatureRecordConsumer (JavaSparkContext sc, DistributedCache cache) {
         Properties props = new Properties();
         props.setProperty("bootstrap.servers", BOOTSTRAP_SERVERS);
         props.setProperty("group.id", GROUP_ID);
@@ -37,6 +41,7 @@ public class FeatureRecordConsumer {
         consumer = new KafkaConsumer<String, FeatureRecord>(props);
         consumer.subscribe(Pattern.compile(TOPIC_PATTERN));
         this.cache = cache;
+        this.sc = sc;
     }
 
     public Iterator<String> poll (int timeout, int minBatchSize, int maxBatchSize) {
@@ -47,24 +52,21 @@ public class FeatureRecordConsumer {
             List<ConsumerRecord<String, FeatureRecord>> partitionRecords = records.records(partition);
             if(partitionRecords.size() < minBatchSize)
                 continue;
-                
-            Vector<Tuple2<Long, FeatureRecord>> featureRecords = 
-                new Vector<Tuple2<Long, FeatureRecord>>();
-            
-            for (ConsumerRecord<String, FeatureRecord> record : partitionRecords) {
-                featureRecords.add(new Tuple2<Long, FeatureRecord>(                    
-                    record.offset(), record.value()));
-            }
-            String context = partitionRecords.get(0).value().getSwid() + '/' + partitionRecords.get(0).value().getCallStackId();
 
-            cache.save(context, featureRecords);
+            JavaPairRDD<Long, FeatureRecord> featureRecordsRDD = sc.parallelize(partitionRecords)
+                .mapToPair(record -> new Tuple2<Long, FeatureRecord>(record.offset(), record.value()));
+                
+            String context = partitionRecords.get(0).value().getSwid() + '/' + 
+                partitionRecords.get(0).value().getCallStackId();
+
+            cache.save(context, featureRecordsRDD);
             
             long lastOffset = partitionRecords.get(partitionRecords.size() - 1).offset();
             consumer.commitSync(Collections.singletonMap(partition, new OffsetAndMetadata(lastOffset + 1)));
 
             if (lastOffset >= maxBatchSize) {
                 contexts.add(context);
-                cache.delete(context, lastOffset - maxBatchSize);
+                cache.purge(context, lastOffset - maxBatchSize);
             }                
         }
         return contexts.iterator();
