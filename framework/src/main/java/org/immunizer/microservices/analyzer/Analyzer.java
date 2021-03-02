@@ -64,6 +64,7 @@ public class Analyzer {
             }
         } finally {
           consumer.close();
+          producer.close();
         }
     }
 }

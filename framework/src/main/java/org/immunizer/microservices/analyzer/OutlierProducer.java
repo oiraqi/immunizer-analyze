@@ -28,4 +28,8 @@ public class OutlierProducer implements Serializable {
     public void send(FeatureRecord featureRecord) {
         producer.send(new ProducerRecord<String, FeatureRecord>(BASE_TOPIC + '/' + featureRecord.getSwid(), featureRecord.getCallStackId(), featureRecord));
     }
+
+    public void close () {
+        producer.close();
+    }
 }
