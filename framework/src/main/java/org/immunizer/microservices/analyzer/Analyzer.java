@@ -62,6 +62,7 @@ public class Analyzer {
                         FeatureRecord fr = fetchedRecordsRDD.filter(rec -> 
                             rec._1 == outlier.get(0)).map(rec -> rec._2).first();
                         producer.send(fr);
+                        cache.delete(context, (Long)outlier.get(0));
                     });
                 }
             }

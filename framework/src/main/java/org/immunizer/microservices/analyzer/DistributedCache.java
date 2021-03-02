@@ -34,7 +34,7 @@ public class DistributedCache {
         igniteContext.fromCache("FRC/" + context).sql("delete from FRC/? where _key < ?", context, minKey);
     }
 
-    public void delete(String context, long[] keys) {
-        igniteContext.fromCache("FRC/" + context).sql("delete from FRC/? where _key in ?", context, keys);
+    public void delete(String context, long key) {
+        igniteContext.fromCache("FRC/" + context).sql("delete from FRC/? where _key = ?", context, key);
     }
 }
