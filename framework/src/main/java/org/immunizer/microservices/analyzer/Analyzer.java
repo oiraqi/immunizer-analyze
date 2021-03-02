@@ -6,6 +6,7 @@ import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.Dataset;
+import static org.apache.spark.sql.functions.*;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.types.DoubleType;
@@ -19,6 +20,8 @@ import java.util.List;
 import java.util.Iterator;
 
 import scala.Tuple2;
+
+import org.apache.spark.ml.outlier.LOF;
 
 public class Analyzer {
 
@@ -36,7 +39,6 @@ public class Analyzer {
         DistributedCache cache = new DistributedCache(sc);
         FeatureRecordConsumer consumer = new FeatureRecordConsumer(sc, cache);
         OutlierProducer producer = new OutlierProducer();
-        LocalOutlierFactor localOutlierFactor = new LocalOutlierFactor();
         StructType structType = new StructType();                    
         structType.add("id", DataTypes.LongType);
         structType.add("features", new VectorUDT());
@@ -54,7 +56,8 @@ public class Analyzer {
                     });
 
                     Dataset<Row> df = sparkSession.createDataFrame(rowRDD, structType);
-                    List<Row> outliers = localOutlierFactor.process(df, MIN_POINTS, TOP_OUTLIERS);
+                    List<Row> outliers = new LOF().setMinPts(MIN_POINTS).transform(df)
+                                                    .sort(desc("lof")).takeAsList(TOP_OUTLIERS);
                     outliers.forEach(outlier -> {
                         FeatureRecord fr = fetchedRecordsRDD.filter(rec -> 
                             rec._1 == outlier.get(0)).map(rec -> rec._2).first();
