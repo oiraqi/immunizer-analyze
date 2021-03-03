@@ -7,10 +7,8 @@ Master -> Broker : poll new feature records
 Broker --> Master : return new feature records
 Master -> Workers : parallelize new feature records
 Workers --> Master : return a handle on parallelized\nfeature records
-Master -> Workers : buffer new feature records per context
-Workers -> Cache : buffer new feature records\nper context
-Master -> Workers : purge old feature records per context
-Workers -> Cache : purge old feature records\nper context
+Master -> Workers : buffer new feature records and\n purge old ones per context
+Workers -> Cache : buffer new feature records and\npure old ones per context
 Master -> Workers : load a batch of feature records per context
 Workers -> Cache : load a batch of feature records\nper context
 Cache --> Workers : return a batch of feature records\nper context
