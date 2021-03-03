@@ -26,6 +26,7 @@ public class DistributedCache {
     private SparkSession sparkSession;
     private JavaSparkContext sc;
     private StructType structType;
+    private static final String CACHE_PREFIX = "FRC/";
 
     public DistributedCache(SparkSession sparkSession) {   
         this.sparkSession = sparkSession;     
@@ -37,13 +38,13 @@ public class DistributedCache {
     }
 
     public void save(String context, JavaPairRDD<Long, FeatureRecord> recordsToBeSavedRDD) {        
-        JavaIgniteRDD<Long, FeatureRecord> featureRecordRDD = igniteContext.fromCache("FRC/" + context);
+        JavaIgniteRDD<Long, FeatureRecord> featureRecordRDD = igniteContext.fromCache(CACHE_PREFIX + context);
         featureRecordRDD.savePairs(recordsToBeSavedRDD);
     }
 
     public Dataset<Row> fetch(String context) {
         JavaPairRDD<Long, FeatureRecord> fetchedRecordsRDD =
-            igniteContext.fromCache("FRC/" + context);
+            igniteContext.fromCache(CACHE_PREFIX + context);
         JavaRDD<Row> rowRDD = fetchedRecordsRDD.map(record -> {
             return RowFactory.create(record._1, record._2.getRecord().values());
         });
@@ -53,16 +54,16 @@ public class DistributedCache {
 
     public FeatureRecord get(String context, long key) {
         JavaPairRDD<Long, FeatureRecord> fetchedRecordsRDD =
-                        igniteContext.fromCache("FRC/" + context);
+                        igniteContext.fromCache(CACHE_PREFIX + context);
         return fetchedRecordsRDD.filter(rec -> 
             rec._1 == key).map(rec -> rec._2).first();
     }
 
     public void purge(String context, long minKey) {
-        igniteContext.fromCache("FRC/" + context).sql("delete from FRC/? where _key < ?", context, minKey);
+        igniteContext.fromCache(CACHE_PREFIX + context).sql("delete from ?? where _key < ?", CACHE_PREFIX, context, minKey);
     }
 
     public void delete(String context, long key) {
-        igniteContext.fromCache("FRC/" + context).sql("delete from FRC/? where _key = ?", context, key);
+        igniteContext.fromCache(CACHE_PREFIX + context).sql("delete from ?? where _key = ?", CACHE_PREFIX, context, key);
     }
 }
