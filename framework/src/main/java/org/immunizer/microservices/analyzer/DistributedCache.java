@@ -28,7 +28,7 @@ public class DistributedCache {
     private StructType structType;
     private static final String CACHE_PREFIX = "FRC/";
 
-    public DistributedCache(SparkSession sparkSession) {   
+    public DistributedCache(SparkSession sparkSession) {
         this.sparkSession = sparkSession;     
         sc = new JavaSparkContext(sparkSession.sparkContext());
         igniteContext = new JavaIgniteContext<Long, FeatureRecord>(sc, "immunizer/ignite-cfg.xml");
