@@ -4,17 +4,12 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.SparkContext;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.Row;
-import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.Dataset;
 import static org.apache.spark.sql.functions.*;
-import org.apache.spark.sql.types.DataTypes;
-import org.apache.spark.sql.types.StructType;
-import org.apache.spark.sql.types.DoubleType;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.ml.linalg.VectorUDT;
 
 import java.util.List;
 import java.util.Iterator;
@@ -36,39 +31,32 @@ public class Analyzer {
     public static void main(String[] args) throws Exception {
         SparkSession sparkSession = SparkSession.builder().appName(APP_NAME).master(SPARK_MASTER_URL).getOrCreate();
         JavaSparkContext sc = new JavaSparkContext(sparkSession.sparkContext());
-        DistributedCache cache = new DistributedCache(sc);
-        FeatureRecordConsumer consumer = new FeatureRecordConsumer(sc, cache);
-        OutlierProducer producer = new OutlierProducer();
-        StructType structType = new StructType();                    
-        structType.add("id", DataTypes.LongType);
-        structType.add("features", new VectorUDT());
-
+        DistributedCache cache = new DistributedCache(sparkSession);
+        FeatureRecordConsumer featureRecordConsumer = new FeatureRecordConsumer(sc, cache);
+        OutlierProducer outlierProducer = new OutlierProducer();
+        
         try {
             while(true) {
-                Iterator<String> contexts =
-                    consumer.poll(BATCH_DURATION, MIN_BATCH_SIZE, MAX_BATCH_SIZE);
+                Iterator<String> contexts = featureRecordConsumer.pollAndGetContexts(
+                                                            BATCH_DURATION,
+                                                            MIN_BATCH_SIZE, MAX_BATCH_SIZE);
 
                 while(contexts.hasNext()) {
                     String context = contexts.next();
-                    JavaPairRDD<Long, FeatureRecord> fetchedRecordsRDD = cache.fetch(context);                    
-                    JavaRDD<Row> rowRDD = fetchedRecordsRDD.map(record -> {
-                        return RowFactory.create(record._1, record._2.getRecord().values());
-                    });
-
-                    Dataset<Row> df = sparkSession.createDataFrame(rowRDD, structType);
+                    Dataset<Row> df = cache.fetch(context);                    
                     List<Row> outliers = new LOF().setMinPts(MIN_POINTS).transform(df)
                                                     .sort(desc("lof")).takeAsList(TOP_OUTLIERS);
                     outliers.forEach(outlier -> {
-                        FeatureRecord fr = fetchedRecordsRDD.filter(rec -> 
-                            rec._1 == outlier.get(0)).map(rec -> rec._2).first();
-                        producer.send(fr);
-                        cache.delete(context, (Long)outlier.get(0));
+                        long key = (Long)outlier.get(0);
+                        FeatureRecord fr = cache.get(context, key);
+                        outlierProducer.send(fr);
+                        cache.delete(context, key);
                     });
                 }
             }
         } finally {
-          consumer.close();
-          producer.close();
+            featureRecordConsumer.close();
+            outlierProducer.close();
         }
     }
 }

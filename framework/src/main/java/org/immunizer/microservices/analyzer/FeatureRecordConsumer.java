@@ -44,7 +44,7 @@ public class FeatureRecordConsumer {
         this.sc = sc;
     }
 
-    public Iterator<String> poll (int timeout, int minBatchSize, int maxBatchSize) {
+    public Iterator<String> pollAndGetContexts (int timeout, int minBatchSize, int maxBatchSize) {
         ConsumerRecords<String, FeatureRecord> records = consumer.poll(Duration.ofSeconds(timeout));
         Vector<String> contexts = new Vector<String>();
 
