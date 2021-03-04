@@ -1,6 +1,6 @@
 # Analyzer Microservice
 
-This is the Java implementation of the Analysis Microservice of [Immunizer: A Scalable Loosely-Coupled Self-Protecting Software Framework using Adaptive Microagents and Parallelized Microservices](https://github.com/oiraqi/immunizer). It leverages distributed and parallel processing thanks to cluster-computing frameworks, such as Apache Spark and Google DataFlow, abstracted and unified through Apache Beam.
+This is the Java implementation of the Analyzer Microservice of [Immunizer: A Scalable Loosely-Coupled Self-Protecting Software Framework using Adaptive Microagents and Parallelized Microservices](https://github.com/oiraqi/immunizer). It leverages distributed and parallel processing thanks to cluster-computing frameworks, such as Apache Spark and Google DataFlow, abstracted and unified through Apache Beam.
 
 ## Design
 - **Sequence Diagram**
